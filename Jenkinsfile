@@ -65,6 +65,10 @@ pipeline {
  
 
     stage("deploy") {
+      environment {
+        DOCKER_CREDS = credentials('docker-hub-repo')
+      }
+
       /* we have deploy stage which is gonna connect to the instance via ssh,and run scp command to copy our server cmds and docker
       compose file to the ec2 instance before sshing into the server
       */ 
@@ -79,7 +83,15 @@ pipeline {
           echo 'deploying docker image to EC2...'
           echo "${EC2_PUBLIC_IP}"
           
-          def shellCmd = "bash ./server-cmds.sh ${IMAGE_NAME}"
+          /*when we are pulling image from private repo, we first have to do dockerlogin 
+            so that the server where we are trying to pull that image to authenticates with private repository
+          */
+
+          /*
+          So this is how it works in shell command. you can pass the parameter in script itself
+          */
+          
+          def shellCmd = "bash ./server-cmds.sh ${IMAGE_NAME} ${DOCKER_CREDS_USR} ${DOCKER_CREDS_PSW}"
           def ec2Instance = "ec2-user@${EC2_PUBLIC_IP}"
 
           sshagent(['server-ssh-key']) {
